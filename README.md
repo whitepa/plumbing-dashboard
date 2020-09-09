@@ -1,4 +1,5 @@
 # Custom Plumbing / Water System Dashboard
+![](dashboard.png)
 ## Background
 My family and I live on a large hillside, with our house nearly 90 feet above the street level.  Since the water main is at the street, this leads to quite a bit of pressure loss by the time the water makes it up the hill. (There is typically only around 15PSI where it enters the house).  As a result, a water pump is required to boost the pressure back up to usable levels.  Additionally, the steep hill means that fire trucks cannot safely make it up the driveway, and therefore we are required to have fire sprinklers in the house (also plumbed through the same system). Lastly, the recent addition of an irrigation system for landscaping has introduced additional requirements on our plumbing.
 
@@ -39,4 +40,4 @@ The Fire Flow sensor is the simplest of all the sensors to sample.  It's just a 
 
 
 ### Dashboard
-![](dashboard.png)
+
