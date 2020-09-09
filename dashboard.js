@@ -106,6 +106,83 @@ class gauge {
     }
 }
 
+class UsageMeter {
+  constructor(x,y,width,height, units) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.units = units;
+  }
+  drw(current, average) {
+    // x,y is dead center on the bar
+    // width height are for the bar itself
+    // needles and text are fixed size
+
+    // calculate range
+    // maximum bar length is 25% over average
+    const thick = 1;
+    const fontSize = 12;
+    let max = average * 1.25;
+    let currentX = current / max * (this.width - thick * 2) + this.x - this.width / 2;
+    let avgX = average / max * this.width + this.x - this.width / 2;
+
+    // box
+    fill('#FFFFFF');
+    rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+    fill('#000000');
+    rect(this.x - this.width / 2 + thick, this.y - this.height / 2 + thick, this.width - thick * 2, this.height - thick * 2);
+
+    // bar
+    fill('#AED662');
+    rect(this.x - this.width / 2 + thick, this.y - this.height / 2 + thick, (current / max) * (this.width - thick * 2), this.height - thick * 2);
+
+    // current annotation
+    fill('#CCCCCC');
+    const tsl = 8; // triangle side length
+    {
+      const x1 = currentX;
+      const y1 = this.y - this.height / 2;
+      const x2 = x1 - 0.6 * tsl;
+      const y2 = y1 - 0.8 * tsl;
+      const x3 = x1 + 0.6 * tsl;
+      const y3 = y1 - 0.8 * tsl;
+      triangle(x1,y1, x2, y2, x3, y3);
+      textSize(fontSize);
+      textAlign(CENTER,BASELINE);
+      text(current + ' ' + this.units, currentX, y2 - 3);
+    }
+    // average annotation
+    fill('#CCCCCC');
+    {
+      const x1 = avgX;
+      const y1 = this.y + this.height / 2;
+      const x2 = x1 - 0.6 * tsl;
+      const y2 = y1 + 0.8 * tsl;
+      const x3 = x1 + 0.6 * tsl;
+      const y3 = y1 + 0.8 * tsl;
+      triangle(x1,y1, x2, y2, x3, y3);
+      textSize(fontSize);
+      textAlign(CENTER,TOP);
+      text(average + ' ' + this.units + '\navg', avgX, y2 + 3);
+    }
+  }
+}
+
+class SafeRangeIndicator {
+  constructor(x,y,range) {
+    this.x = x;
+    this.y = y;
+    this.range = range;
+  }
+  drw() {
+    fill('#CCCCCC');
+    textAlign(CENTER,CENTER);
+    textSize(16);
+    text('SAFE WHEN\n' + this.range, this.x, this.y);
+  }
+}
+
 class InfoBar {
     constructor(x,y,width) {
       this.x = x;
@@ -130,11 +207,18 @@ class InfoBar {
 
 }
 
-let g_house = new gauge(100,220, 'HOUSE', 'GPM', 0, 10);
-let g_irrigation = new gauge(303,220, 'IRRIGATION', 'GPM', 0, 10);
-let g_inlet_psi = new gauge(506,220, 'INLET', 'PSI', 0, 200);
-let g_outlet_psi = new gauge(709,220, 'OUTLET', 'PSI', 0, 200);
+let gaugeHeight = 210;
+let g_house = new gauge(100,gaugeHeight, 'HOUSE', 'GPM', 0, 10);
+let g_irrigation = new gauge(303,gaugeHeight, 'IRRIGATION', 'GPM', 0, 10);
+let g_inlet_psi = new gauge(506,gaugeHeight, 'INLET', 'PSI', 0, 200);
+let g_outlet_psi = new gauge(709,gaugeHeight, 'OUTLET', 'PSI', 0, 200);
 
+let meterHeight = 270;
+let gHouseUsage = new UsageMeter(100, meterHeight, 130, 15, "gal");
+let gIrrigationUsage = new UsageMeter(300, meterHeight, 130, 15, "gal");
+
+let gInletSafeRange = new SafeRangeIndicator(506, meterHeight, '5 - 40 PSI');
+let gOutletSafeRange = new SafeRangeIndicator(709, meterHeight, '50 - 90 PSI');
 
 // 6 annunciators
 let a_x = 62;
@@ -168,6 +252,11 @@ function draw() {
   g_irrigation.drw(5.1);
   g_inlet_psi.drw(135.9, 0, 150);
   g_outlet_psi.drw(70.3, 0, 150);
+  gHouseUsage.drw(107.7, 150.1);
+  gIrrigationUsage.drw(50.1, 104.0);
+
+  gInletSafeRange.drw();
+  gOutletSafeRange.drw();
 
   a_fire.drw('ON');
   a_flood.drw('ON');
