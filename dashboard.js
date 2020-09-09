@@ -57,13 +57,15 @@ class Button {
    }
 }
 class Gauge {
-    constructor(x, y, title, unit, min, max) {
+    constructor(x, y, title, unit, min, max, minsafe, maxsafe) {
         this.x = x;
         this.y = y;
         this.title = title;
         this.unit = unit;
         this.min = min;
         this.max = max;
+        this.minsafe = minsafe;
+        this.maxsafe = maxsafe;
     }
 
     drw(value, low, high) {
@@ -71,23 +73,40 @@ class Gauge {
 
         let gaugeOffsetY = -50;
         let colorIllum = '#AED662';
+        let colorIllumDanger = '#F68030';
         let colorOff = '#454F33';
+        let colorOffDanger = '#4F4533';
         let outsideRadius = 140;
         let insideRadius = 120;
         let arcStart = -4.5 * QUARTER_PI;
         let arcEnd = 0.5 * QUARTER_PI;
         let peakArcWidth = 0.03 * QUARTER_PI;
-        fill(colorOff);    
+        if (value > this.maxsafe || value < this.minsafe) {
+          fill(colorOffDanger);
+        } else {
+          fill(colorOff);
+        }
         arc(this.x, this.y + gaugeOffsetY, outsideRadius, outsideRadius, arcStart, arcEnd);
-        fill(colorIllum);
-
+        if (value > this.maxsafe || value < this.minsafe) {
+          fill(colorIllumDanger);
+        } else {
+          fill(colorIllum);
+        }
         // draw value
         let arcValue = (value / (this.max - this.min)) * (arcEnd - arcStart) + arcStart;
         arc(this.x, this.y + gaugeOffsetY, outsideRadius, outsideRadius, arcStart, arcValue);
 
         // draw high peak
-        if (high != 0 && high <= this.max) {
+        if (high != 0) {
+            if (high > this.max) high = this.max;
             let arcHigh = (high / (this.max - this.min)) * (arcEnd - arcStart) + arcStart;
+            if (high > this.maxsafe || high < this.minsafe) {
+              fill(colorIllumDanger);
+            }
+            else
+            {
+              fill(colorIllum);
+            }
             arc(this.x, this.y + gaugeOffsetY, outsideRadius, outsideRadius,
                 arcHigh - peakArcWidth, arcHigh + peakArcWidth);
         }
@@ -210,10 +229,10 @@ class InfoBar {
 }
 
 let gaugeHeight = 210;
-let gHouse = new Gauge(100,gaugeHeight, 'HOUSE', 'GPM', 0, 10);
-let gIrrigation = new Gauge(303,gaugeHeight, 'IRRIGATION', 'GPM', 0, 10);
-let gInletPSI = new Gauge(506,gaugeHeight, 'INLET', 'PSI', 0, 200);
-let gOutletPSI = new Gauge(709,gaugeHeight, 'OUTLET', 'PSI', 0, 200);
+let gHouse = new Gauge(100,gaugeHeight, 'HOUSE', 'GPM', 0, 10, 0, 100);
+let gIrrigation = new Gauge(303,gaugeHeight, 'IRRIGATION', 'GPM', 0, 10, 0, 100);
+let gInletPSI = new Gauge(506,gaugeHeight, 'INLET', 'PSI', 0, 200, 5, 40);
+let gOutletPSI = new Gauge(709,gaugeHeight, 'OUTLET', 'PSI', 0, 200, 40, 90);
 
 let meterHeight = 270;
 let gHouseUsage = new UsageMeter(100, meterHeight, 130, 15, "gal");
@@ -252,7 +271,7 @@ function draw() {
 
   gHouse.drw(7.3, 0, 9.5);
   gIrrigation.drw(5.1);
-  gInletPSI.drw(135.9, 0, 150);
+  gInletPSI.drw(15.9, 0, 150);
   gOutletPSI.drw(70.3, 0, 150);
   gHouseUsage.drw(107.7, 150.1);
   gIrrigationUsage.drw(0, 104.0);
