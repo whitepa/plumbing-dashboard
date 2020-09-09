@@ -1,4 +1,4 @@
-class annunciator {
+class Annunciator {
    constructor(x,y,title,colorOn,colorOff) {
      this.x = x;
      this.y = y;
@@ -33,7 +33,7 @@ class annunciator {
 
    }
 }
-class button {
+class Button {
    constructor(x,y,title) {
      this.x = x;
      this.y = y;
@@ -54,7 +54,7 @@ class button {
      text(this.title, this.x, this.y);
    }
 }
-class gauge {
+class Gauge {
     constructor(x, y, title, unit, min, max) {
         this.x = x;
         this.y = y;
@@ -208,10 +208,10 @@ class InfoBar {
 }
 
 let gaugeHeight = 210;
-let g_house = new gauge(100,gaugeHeight, 'HOUSE', 'GPM', 0, 10);
-let g_irrigation = new gauge(303,gaugeHeight, 'IRRIGATION', 'GPM', 0, 10);
-let g_inlet_psi = new gauge(506,gaugeHeight, 'INLET', 'PSI', 0, 200);
-let g_outlet_psi = new gauge(709,gaugeHeight, 'OUTLET', 'PSI', 0, 200);
+let gHouse = new Gauge(100,gaugeHeight, 'HOUSE', 'GPM', 0, 10);
+let gIrrigation = new Gauge(303,gaugeHeight, 'IRRIGATION', 'GPM', 0, 10);
+let gInletPSI = new Gauge(506,gaugeHeight, 'INLET', 'PSI', 0, 200);
+let gOutletPSI = new Gauge(709,gaugeHeight, 'OUTLET', 'PSI', 0, 200);
 
 let meterHeight = 270;
 let gHouseUsage = new UsageMeter(100, meterHeight, 130, 15, "gal");
@@ -224,17 +224,17 @@ let gOutletSafeRange = new SafeRangeIndicator(709, meterHeight, '50 - 90 PSI');
 let a_x = 62;
 let a_x_sep = 135;
 let a_y = 45;
-let a_fire        = new annunciator(a_x,a_y, 'FIRE', '#FF0200', '#444444');
-let a_flood       = new annunciator(a_x+=a_x_sep,a_y, 'FLOOD', '#FF8002', '#444444');
-let a_inlet_high  = new annunciator(a_x+=a_x_sep,a_y, 'INLET\nHIGH', '#FEFF00', '#444444');
-let a_inlet_low   = new annunciator(a_x+=a_x_sep,a_y, 'INLET\nLOW', '#03FFFF', '#444444');
-let a_outlet_high = new annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nHIGH', '#FEFF00', '#444444');
-let a_outlet_low  = new annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#03FFFF', '#444444');
+let gFire       = new Annunciator(a_x,a_y, 'FIRE', '#FF0200', '#444444');
+let gFlood      = new Annunciator(a_x+=a_x_sep,a_y, 'FLOOD', '#FF8002', '#444444');
+let gInletHigh  = new Annunciator(a_x+=a_x_sep,a_y, 'INLET\nHIGH', '#FEFF00', '#444444');
+let gInletLow   = new Annunciator(a_x+=a_x_sep,a_y, 'INLET\nLOW', '#03FFFF', '#444444');
+let gOutletHigh = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nHIGH', '#FEFF00', '#444444');
+let gOutletLow  = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#03FFFF', '#444444');
 
-let b_silence   = new button(100, 380, 'SILENCE');
-let b_test      = new button(300, 380, 'TEST');
-let b_resetFire = new button(500, 380, 'RESET\nFIRE');
-let b_resetRanges = new button(700, 380, 'RESET\nRANGES');
+let gSilence     = new Button(100, 380, 'SILENCE');
+let gTest        = new Button(300, 380, 'TEST');
+let gResetFire   = new Button(500, 380, 'RESET\nFIRE');
+let gResetRanges = new Button(700, 380, 'RESET\nRANGES');
 
 let gInfoBar = new InfoBar(20, 455, 760);
 
@@ -248,27 +248,27 @@ function setup() {
 function draw() {
   background('#000000');
 
-  g_house.drw(7.3, 0, 9.5);
-  g_irrigation.drw(5.1);
-  g_inlet_psi.drw(135.9, 0, 150);
-  g_outlet_psi.drw(70.3, 0, 150);
+  gHouse.drw(7.3, 0, 9.5);
+  gIrrigation.drw(5.1);
+  gInletPSI.drw(135.9, 0, 150);
+  gOutletPSI.drw(70.3, 0, 150);
   gHouseUsage.drw(107.7, 150.1);
   gIrrigationUsage.drw(50.1, 104.0);
 
   gInletSafeRange.drw();
   gOutletSafeRange.drw();
 
-  a_fire.drw('ON');
-  a_flood.drw('ON');
-  a_inlet_high.drw('ON');
-  a_inlet_low.drw('OFF');
-  a_outlet_high.drw('OFF');
-  a_outlet_low.drw('OFF');
+  gFire.drw('ON');
+  gFlood.drw('ON');
+  gInletHigh.drw('ON');
+  gInletLow.drw('OFF');
+  gOutletHigh.drw('OFF');
+  gOutletLow.drw('OFF');
 
-  b_silence.drw();
-  b_test.drw();
-  b_resetFire.drw();
-  b_resetRanges.drw();
+  gSilence.drw();
+  gTest.drw();
+  gResetFire.drw();
+  gResetRanges.drw();
 
     //g_one.drw(time%100);
     //g_two.drw(100 - time%100);
