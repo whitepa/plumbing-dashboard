@@ -27,9 +27,9 @@ class annunciator {
      } else {
        fill(this.colorOff);
      }
-     textAlign(CENTER);
+     textAlign(CENTER, CENTER);
      textSize(20);
-     text(this.title, this.x, this.y - 5);
+     text(this.title, this.x, this.y);
 
    }
 }
@@ -50,7 +50,8 @@ class button {
           width - thickness * 2, height - thickness * 2);
      fill('#CCCCCC');
      textSize(30);
-     text(this.title, this.x, this.y - 8);
+     textAlign(CENTER, CENTER);
+     text(this.title, this.x, this.y);
    }
 }
 class gauge {
@@ -93,7 +94,7 @@ class gauge {
         fill('#000000');    
         arc(this.x, this.y + gaugeOffsetY, insideRadius, insideRadius, arcStart, arcEnd);
 
-        textAlign(CENTER);
+        textAlign(CENTER, BASELINE);
         textSize(40);
         fill('#CCCCCC'); 
         text( this.value, this.x, this.y - 39);
@@ -103,6 +104,30 @@ class gauge {
         text( this.title, this.x, this.y + 15);
       
     }
+}
+
+class InfoBar {
+    constructor(x,y,width) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+    }
+
+    drw(temp, mintemp, mintime) {
+      fill('#CCCCCC');
+      textSize(16);
+      // TIME
+      textAlign(LEFT, CENTER);
+      const now = new Date();
+      text(now.toLocaleString(), this.x, this.y);
+      // TEMP
+      textAlign(CENTER, CENTER);
+      text(temp + ' F', this.x + this.width / 2, this.y);
+      // MIN TEMP
+      textAlign(RIGHT, CENTER);
+      text('MIN: ' + mintemp + ' F @ ' + now.toLocaleString(), this.x + this.width, this.y);
+    }
+
 }
 
 let g_house = new gauge(100,220, 'HOUSE', 'GPM', 0, 10);
@@ -122,43 +147,43 @@ let a_inlet_low   = new annunciator(a_x+=a_x_sep,a_y, 'INLET\nLOW', '#03FFFF', '
 let a_outlet_high = new annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nHIGH', '#FEFF00', '#444444');
 let a_outlet_low  = new annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#03FFFF', '#444444');
 
-let b_silence   = new button(100, 400, 'SILENCE');
-let b_test      = new button(300, 400, 'TEST');
-let b_resetFire = new button(500, 400, 'RESET\nFIRE');
-let b_resetRanges = new button(700, 400, 'RESET\nRANGES');
+let b_silence   = new button(100, 380, 'SILENCE');
+let b_test      = new button(300, 380, 'TEST');
+let b_resetFire = new button(500, 380, 'RESET\nFIRE');
+let b_resetRanges = new button(700, 380, 'RESET\nRANGES');
+
+let gInfoBar = new InfoBar(20, 455, 760);
 
 function setup() {
     createCanvas(800, 480);
     background('#000000');
-    frameRate(20);
+    frameRate(10);
     noStroke();
-
-    g_house.drw(7.5, 0, 9.5);
-    g_irrigation.drw(5.1);
-    g_inlet_psi.drw(135.9, 0, 150);
-    g_outlet_psi.drw(70.3, 0, 150);
-
-    a_fire.drw('ON');
-    a_flood.drw('ON');
-    a_inlet_high.drw('ON');
-    a_inlet_low.drw('OFF');
-    a_outlet_high.drw('OFF');
-    a_outlet_low.drw('OFF');
-
-    b_silence.drw();
-    b_test.drw();
-    b_resetFire.drw();
-    b_resetRanges.drw();
 }
 
-
 function draw() {
+  background('#000000');
 
+  g_house.drw(7.3, 0, 9.5);
+  g_irrigation.drw(5.1);
+  g_inlet_psi.drw(135.9, 0, 150);
+  g_outlet_psi.drw(70.3, 0, 150);
 
-     //background('#5D6D7E');
+  a_fire.drw('ON');
+  a_flood.drw('ON');
+  a_inlet_high.drw('ON');
+  a_inlet_low.drw('OFF');
+  a_outlet_high.drw('OFF');
+  a_outlet_low.drw('OFF');
+
+  b_silence.drw();
+  b_test.drw();
+  b_resetFire.drw();
+  b_resetRanges.drw();
+
     //g_one.drw(time%100);
     //g_two.drw(100 - time%100);
-
-
+  const mintime = Date("2020/09/01, 03:12:45");
+  gInfoBar.drw(78.2, 59.0, mintime);
 }
 
