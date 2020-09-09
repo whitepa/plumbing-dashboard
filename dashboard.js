@@ -1,3 +1,5 @@
+// Water System Dashboard
+
 class Annunciator {
    constructor(x,y,title,colorOn,colorOff) {
      this.x = x;
@@ -253,7 +255,7 @@ function draw() {
   gInletPSI.drw(135.9, 0, 150);
   gOutletPSI.drw(70.3, 0, 150);
   gHouseUsage.drw(107.7, 150.1);
-  gIrrigationUsage.drw(50.1, 104.0);
+  gIrrigationUsage.drw(0, 104.0);
 
   gInletSafeRange.drw();
   gOutletSafeRange.drw();
@@ -270,8 +272,6 @@ function draw() {
   gResetFire.drw();
   gResetRanges.drw();
 
-    //g_one.drw(time%100);
-    //g_two.drw(100 - time%100);
   const mintime = Date("2020/09/01, 03:12:45");
   gInfoBar.drw(78.2, 59.0, mintime);
 }
