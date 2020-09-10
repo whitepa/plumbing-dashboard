@@ -1,0 +1,49 @@
+#!/usr/local/bin/python
+
+import RPi.GPIO as GPIO
+import time
+import os
+from ADS1115 import ADS1115
+
+ads1115 = ADS1115()
+
+GPIO.setmode(GPIO.BCM)
+
+# GPIO INPUT PINS
+FIRE_FLOW = 4
+HOUSE_FLOW_PULSE = 14
+IRRIGATION_FLOW_PULSE = 15
+
+GPIO.setup(FIRE_FLOW, GPIO.IN)
+GPIO.setup(HOUSE_FLOW_PULSE, GPIO.IN)
+GPIO.setup(IRRIGATION_FLOW_PULSE, GPIO.IN)
+
+# Setup MQTT connection
+
+# Pulse Counters will compute total, daily, and instant flows, and
+# publish to MQTT in asynchronous threads
+class PulseCounter():
+    def __init__(self, mqttTopic)
+    def input(self, value):
+        # 
+
+gHouseFlowPulseCounter      = PulseCounter(mqtt, "water/house")
+gIrrigationFlowPulseCounter = PulseCounter(mqtt, "water/irrigation")
+try:
+    while True:
+        # Check for Fire Flow
+        if GPIO.input(FIRE_FLOW) == 1:
+            # FIRE!
+            # Fire flag latches, must be cleared manually.
+            # Flag is set in MQTT with retain = 1, QoS = 1
+        # Check for House Flow Pulse High transition
+        gHouseFlowPulseCounter.input(GPIO.input(HOUSE_FLOW_PULSE))
+
+        # Check for Irrigation Flow Pulse High transition
+        gIrrigationFlowPulseCounter.input(GPIO.input(IRRIGATION_FLOW_PULSE))
+
+        # Read Inlet Pressure over I2C
+        # Read Outlet Pressure over I2C
+        time.sleep(0.01);
+except KeyboardInterrupt:
+    GPIO.cleanup()
