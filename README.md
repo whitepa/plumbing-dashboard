@@ -41,3 +41,5 @@ The Fire Flow sensor is the simplest of all the sensors to sample.  It's just a 
 
 ### Dashboard
 
+### Future Improvements
+Our pump is always-on, plugged directly into mains power.  If a low inlet pressure event occurs, the pump could burn itself up trying to boost the outlet pressure. Therefore as a future improvement, I'd like to tie the low-inlet-pressure condition to a relay which kills power to the pump. The pump is 1.8HP and runs on a 240v 20A circuit so a real industrial relay will be required (the Sparkfun / Adafruit stuff likely won't cut it). As a side note, this situation has already happened once while Washington Water was servicing a failed PRV. Luckily, the technicians remembered I had a booster pump and were nice enough to stop by the house right after this event started to let me know to unplug the pump!  Talk about going above and beyond!
