@@ -278,18 +278,28 @@ let gResetFire   = new Button(500, 380, 'RESET\nFIRE',
   function(){
     message = new Paho.MQTT.Message("False");
     message.destinationName = "water/fireFlow";
+    message.retained = true;
+    message.qos = 1;
     mqtt.send(message);
   });
  
 let gResetRanges = new Button(700, 380, 'RESET\nRANGES', function() {
-  
+
 });
 
 let gInfoBar = new InfoBar(20, 455, 760);
 
 let state = {}
 
-let mqtt = new Paho.MQTT.Client("10.0.1.19",Number(1884),"clientID")
+let mqtt = new Paho.MQTT.Client("10.0.1.19",Number(1884),Math.random().toString(16).substring(2,10));
+
+function attemptConnect() {
+  mqtt.connect({
+    onSuccess: onConnect,
+    userName: 'water',
+    password: 'rmWP80rN0TeVZHPw'
+  })
+}
 
 function onConnect() {
   console.log('MQTT connected!')
@@ -297,12 +307,12 @@ function onConnect() {
 }
 function onConnectionLost(responseObject) {
   console.log("Connection Lost: "+responseObject.errorMessage)
+  setTimeout(attemptConnect, 1000);
 }
 function onMessageArrived(message) {
   //console.log("MQTT Message: "+message.topic + " = " + message.payloadString)
   state[message.topic] = message.payloadString
 }
-
 function setup() {
     createCanvas(800, 480);
     background('#000000');
@@ -311,11 +321,7 @@ function setup() {
 
     mqtt.onConnectionLost = onConnectionLost
     mqtt.onMessageArrived = onMessageArrived
-    mqtt.connect({
-      onSuccess: onConnect,
-      userName: 'water',
-      password: 'rmWP80rN0TeVZHPw'
-    })
+    attemptConnect();
 }
 
 function draw() {
