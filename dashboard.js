@@ -36,24 +36,34 @@ class Annunciator {
    }
 }
 class Button {
-   constructor(x,y,title) {
+   constructor(x,y,title,onPress) {
      this.x = x;
      this.y = y;
      this.title = title;
+     this.onPress = onPress;
+     this.width = 150;
+     this.height = 100;
+     gPressableItems.push(this);
    }
    drw() {
-     let width = 150;
-     let height = 100;
      let thickness = 2;
      fill('#CCCCCC');
-     rect(this.x - width / 2, this.y - height / 2, width, height);
+     rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
      fill('#000000');
-     rect(this.x - width / 2 + thickness, this.y - height / 2 + thickness,
-          width - thickness * 2, height - thickness * 2);
+     rect(this.x - this.width / 2 + thickness, this.y - this.height / 2 + thickness,
+          this.width - thickness * 2, this.height - thickness * 2);
      fill('#CCCCCC');
      textSize(30);
      textAlign(CENTER, CENTER);
      text(this.title, this.x, this.y);
+   }
+   checkPressed() {
+     if (this.x - this.width / 2 < mouseX &&
+        this.x + this.width / 2 > mouseX &&
+        this.y - this.height / 2 < mouseY &&
+        this.y + this.height / 2 > mouseY) {
+          this.onPress();
+        }
    }
 }
 class Gauge {
@@ -232,6 +242,7 @@ class InfoBar {
 
 }
 
+let gPressableItems = [];
 let gaugeHeight = 210;
 let gHouse = new Gauge(100,gaugeHeight, 'HOUSE', 'GPM', 0, 10, 0, 100);
 let gIrrigation = new Gauge(303,gaugeHeight, 'IRRIGATION', 'GPM', 0, 10, 0, 100);
@@ -256,10 +267,23 @@ let gInletLow   = new Annunciator(a_x+=a_x_sep,a_y, 'INLET\nLOW', '#03FFFF', '#4
 let gOutletHigh = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nHIGH', '#FEFF00', '#444444');
 let gOutletLow  = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#03FFFF', '#444444');
 
-let gSilence     = new Button(100, 380, 'SILENCE');
-let gTest        = new Button(300, 380, 'TEST');
-let gResetFire   = new Button(500, 380, 'RESET\nFIRE');
-let gResetRanges = new Button(700, 380, 'RESET\nRANGES');
+let gSilence     = new Button(100, 380, 'SILENCE', function() {
+
+});
+let gTest        = new Button(300, 380, 'TEST', function() {
+
+});
+
+let gResetFire   = new Button(500, 380, 'RESET\nFIRE', 
+  function(){
+    message = new Paho.MQTT.Message("False");
+    message.destinationName = "water/fireFlow";
+    mqtt.send(message);
+  });
+ 
+let gResetRanges = new Button(700, 380, 'RESET\nRANGES', function() {
+  
+});
 
 let gInfoBar = new InfoBar(20, 455, 760);
 
@@ -326,3 +350,8 @@ function draw() {
   gInfoBar.drw(78.2, 59.0, mintime);
 }
 
+function mousePressed() {
+  gPressableItems.forEach(function(item) {
+    item.checkPressed();
+  })
+}

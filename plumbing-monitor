@@ -95,7 +95,7 @@ class FlowSensorData:
     def Input(self, input):
         self.pulseCounter.Input(input)
         # Check if this is a new day, and update dailys
-        
+
 
 
 
@@ -124,7 +124,13 @@ class DataPublisher():
     def fireFlowInput(self, isFlowing):
         if (isFlowing and self.fireFlow == False):
             self.fireFlow = True # latches ON until explicitly cleared via MQTT
-    
+    def GetFireFlow(self):
+        if (self.fireFlow == True):
+            self.fireFlow = False
+            return True
+        else:
+            return False
+
     def houseFlowInput(self, input):
         self.houseFlow.pulseCounter.Input(input)
 
@@ -138,7 +144,8 @@ class DataPublisher():
         #
         # Create a list of all current pairs
         pairs = []
-        pairs.append({'topic':"water/fireFlow",'payload':str(self.fireFlow)})
+        if self.GetFireFlow():
+            pairs.append({'topic':"water/fireFlow",'payload':str(True)})
         pairs.append({'topic':"water/houseFlow/currentGPM",'payload':str(self.houseFlow.GetCurrentGPM())})
         pairs.append({'topic':"water/houseFlow/maxGPM",'payload':str(self.houseFlow.GetMaxGPM())})
         pairs.append({'topic':"water/houseFlow/dailyVolume",'payload':str(self.houseFlow.GetDailyVolume())})
