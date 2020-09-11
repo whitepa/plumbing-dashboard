@@ -20,6 +20,7 @@ class ExponentiallyDampedMovingAverage:
         self.shutdown = False
 
     def __enter__(self):
+        print("EDMA __enter__")
         self.thread = threading.Thread(target=self.runloop)
         self.thread.start()
     
@@ -44,14 +45,15 @@ class ExponentiallyDampedMovingAverage:
         # print("Calculated newvalue of ", self.value);
 
     def runloop(self):
+        print("EDMA runloop starting")
         lastCalc = 0
         with self.cv:
             while self.shutdown == False:
-                now = time.monotonic()
+                now = time.time() # TODO monotonic needed
                 updateInterval = self.updateIntervalMillisec / 1000
                 if now - lastCalc >= updateInterval:
                     self.calculate()
-                    lastCalc = time.monotonic()
+                    lastCalc = time.time() # TODO monotonic needed
                     waitTime = updateInterval
                 else:
                     waitTime = updateInterval - (now - lastCalc)

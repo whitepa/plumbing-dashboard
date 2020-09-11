@@ -1,11 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import RPi.GPIO as GPIO
 import time
 import os
 #from ADS1115 import ADS1115
 from PulseUtils import ExponentiallyDampedMovingAverage
-from contextlib import nested
+from contextlib import ExitStack
+
+from MQTTClient import MQTTClient
+
+import configparser
+
 
 # ads1115 = ADS1115()
 
@@ -32,16 +37,22 @@ GPIO.setup(IRRIGATION_FLOW_PULSE, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # be fast enough such that you don't miss two transitions of the
 # signal. This will obviously depend on your use case.
 class PulseCounter():
-    def __init__(self, topic):
-        self.topic = topic
+    def __init__(self):
         self.previousValue = 0
         self.pulseRateInput = 0
         self.pulseCount = 0
+        self.gallonsPerPulse = 0.1
         self.pulseRate = ExponentiallyDampedMovingAverage(11,1000,100,self.getRateInput)
+    
+    def GetTotalVolume(self):
+        return self.pulseCount * self.gallonsPerPulse
+    def GetCurrentGPM(self):
+        return self.pulseRate.getValueAsRate(60000) * self.gallonsPerPulse
 
     def getRateInput(self):
         value = self.pulseRateInput
         self.pulseRateInput = 0
+        print("getRateInput returns ", value)
         return value
 
     def Input(self, value):
@@ -50,25 +61,121 @@ class PulseCounter():
             self.pulseCount += 1
             self.pulseRateInput += 1
         self.previousValue = value
+        # TODO check for and store maximum
 
-gHouseFlowPulseCounter      = PulseCounter(mqtt, "water/house")
-gIrrigationFlowPulseCounter = PulseCounter(mqtt, "water/irrigation")
+class PressureSensorData:
+    def __init__(self, topic, minSafe, maxSafe):
+        self.topic = topic
+        self.minSafe = minSafe
+        self.maxSafe = maxSafe
+
+        self.pressure = 0
+        self.minPressure = 0
+        self.maxPressure = 0
+
+class FlowSensorData:
+    def __init__(self, topic):
+        self.topic = topic
+        self.totalVolume = 0
+        self.dailyVolume = 0
+        self.dailyAverage = 0 # TODO use another edma
+        self.numDays = 0
+        self.currentFlowRate = 0
+        self.pulseCounter = PulseCounter()
+
+    def GetCurrentGPM(self):
+        return self.pulseCounter.GetCurrentGPM()
+    def GetDailyVolume(self):
+        return self.dailyVolume
+    def GetDailyAverage(self):
+        return self.dailyAverage
+    def GetMaxGPM(self):
+        return 0 # TODO input loop should track this
+
+
+
+
+class DataPublisher():
+    # handle the stats data itself regarding all water and plumbing systems
+    # decide when and what to publish to MQTT.
+    #
+    # Generally speaking, data is only published to MQTT when changes occur. All
+    # data is published with retain=1 to allow instant display of current stats
+    # on dashboard startup (or any client connection)
+    #
+    # This class is intended to sit in between the "input thread" and the
+    # "publishing thread" This separates into two contexts the inputs vs the
+    # decisions of what and when to publish.  This is important as the input
+    # thread is very timing sensitive so as to not miss any signal transitions,
+    # and since the publishing thread is dealing with MQTT communications (which
+    # may block), these responsibilities must be handled in separate threads.
+    def __init__(self):
+        self.fireFlow = False
+        self.houseFlow = FlowSensorData("water/houseFlow")
+        self.irrigationFlow = FlowSensorData("water/irrigationFlow")
+        self.inletPressure = PressureSensorData("water/inlet", 5, 40)
+        self.outletPressure = PressureSensorData("water/outlet", 40, 90)
+
+    def fireFlowInput(self, isFlowing):
+        if (isFlowing and self.Fireflow == False):
+            self.Fireflow = True # latches ON until explicitly cleared via MQTT
+    
+    def houseFlowInput(self, input):
+        self.houseFlow.pulseCounter.Input(input)
+
+    def irrigationFlowInput(self, input):
+        self.irrigationFlow.pulseCounter.Input(input)
+
+    def getMessagesToPublish(self):
+        # TODO only publish what has changed
+        # Returns an array of messages which can be published via paho MQTT's
+        # "publish multiple"
+        #
+        # Create a list of all current pairs
+        pairs = []
+        pairs.append({'topic':"water/fireFlow",'payload':str(self.fireFlow)})
+        pairs.append({'topic':"water/houseFlow/currentGPM",'payload':str(self.houseFlow.GetCurrentGPM())})
+        pairs.append({'topic':"water/houseFlow/maxGPM",'payload':str(self.houseFlow.GetMaxGPM())})
+        pairs.append({'topic':"water/houseFlow/dailyVolume",'payload':str(self.houseFlow.GetDailyVolume())})
+        pairs.append({'topic':"water/houseFlow/dailyAverage",'payload':str(self.houseFlow.GetDailyAverage())})
+        pairs.append({'topic':"water/irrigationFlow/currentGPM",'payload':str(self.irrigationFlow.GetCurrentGPM())})
+        pairs.append({'topic':"water/irrigationFlow/maxGPM",'payload':str(self.irrigationFlow.GetMaxGPM())})
+        pairs.append({'topic':"water/irrigationFlow/dailyVolume",'payload':str(self.irrigationFlow.GetDailyVolume())})
+        pairs.append({'topic':"water/irrigationFlow/dailyAverage",'payload':str(self.irrigationFlow.GetDailyAverage())})
+        # TODO add pressure related stuff
+        
+        msgs = []
+        for x in pairs:
+            x['qos'] = 1
+            x['retain'] = True
+            msgs.append(x)
+        
+        return msgs
+    
+        
+
+        
 try:
-    with nested(gHouseFlowPulseCounter.pulseRate,gIrrigationFlowPulseCounter.pulseRate):
+    config = configparser.ConfigParser()
+    config.read('plumbing-monitor.ini')
+    p = DataPublisher()
+    mqtt = MQTTClient(p,config['MQTT']['Host'],
+                        int(config['MQTT']['Port']),
+                        config['MQTT']['Username'],
+                        config['MQTT']['Password'])
+    with ExitStack() as stack:
+        stack.enter_context(p.houseFlow.pulseCounter.pulseRate)
+        stack.enter_context(p.irrigationFlow.pulseCounter.pulseRate)
+        stack.enter_context(mqtt)
         while True:
-            # Check for Fire Flow
-            if GPIO.input(FIRE_FLOW) == 1:
-                # FIRE!
-                print("FIRE DETECTED")
-                # Fire flag latches, must be cleared manually.
-                # Flag is set in MQTT with retain = 1, QoS = 1
-            gHouseFlowPulseCounter.Input(GPIO.input(HOUSE_FLOW_PULSE))
-            gIrrigationFlowPulseCounter.Input(GPIO.input(IRRIGATION_FLOW_PULSE))
+            # Report values of all GPIO inputs to the DataHandler
+            p.fireFlowInput(GPIO.input(FIRE_FLOW))
 
-            # Read Inlet Pressure over I2C
-            # Read Outlet Pressure over I2C
-            print("House=",gHouseFlowPulseCounter.pulseRate.getValueAsRate(1000),
-                " Irrigation=",gIrrigationFlowPulseCounter.pulseRate.getValueAsRate(1000))
+            p.houseFlowInput(GPIO.input(HOUSE_FLOW_PULSE))
+            p.irrigationFlowInput(GPIO.input(IRRIGATION_FLOW_PULSE))
+
+            # TODO Read Inlet/Outlet Pressures over I2C
+            
             time.sleep(0.1)
 
 except KeyboardInterrupt:
