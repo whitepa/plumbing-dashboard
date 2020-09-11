@@ -1,49 +1,75 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 
 import RPi.GPIO as GPIO
 import time
 import os
-from ADS1115 import ADS1115
+#from ADS1115 import ADS1115
+from PulseUtils import ExponentiallyDampedMovingAverage
+from contextlib import nested
 
-ads1115 = ADS1115()
+# ads1115 = ADS1115()
 
 GPIO.setmode(GPIO.BCM)
 
 # GPIO INPUT PINS
-FIRE_FLOW = 4
-HOUSE_FLOW_PULSE = 14
-IRRIGATION_FLOW_PULSE = 15
+# GPIO 2 and 3 (pins 3 and 5) are used for I2C
+# 
+FIRE_FLOW = 17             # Pin 11
+HOUSE_FLOW_PULSE = 27      # Pin 13
+IRRIGATION_FLOW_PULSE = 22 # Pin 15
 
-GPIO.setup(FIRE_FLOW, GPIO.IN)
-GPIO.setup(HOUSE_FLOW_PULSE, GPIO.IN)
-GPIO.setup(IRRIGATION_FLOW_PULSE, GPIO.IN)
+GPIO.setup(FIRE_FLOW, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(HOUSE_FLOW_PULSE, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(IRRIGATION_FLOW_PULSE, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Setup MQTT connection
 
+
 # Pulse Counters will compute total, daily, and instant flows, and
 # publish to MQTT in asynchronous threads
+# The input() method must be called periodically with the value of
+# the associated GPIO input. The rate at which this is called must
+# be fast enough such that you don't miss two transitions of the
+# signal. This will obviously depend on your use case.
 class PulseCounter():
-    def __init__(self, mqttTopic)
-    def input(self, value):
-        # 
+    def __init__(self, topic):
+        self.topic = topic
+        self.previousValue = 0
+        self.pulseRateInput = 0
+        self.pulseCount = 0
+        self.pulseRate = ExponentiallyDampedMovingAverage(11,1000,100,self.getRateInput)
+
+    def getRateInput(self):
+        value = self.pulseRateInput
+        self.pulseRateInput = 0
+        return value
+
+    def Input(self, value):
+        if value == 1 and self.previousValue == 0:
+            # transitioned high
+            self.pulseCount += 1
+            self.pulseRateInput += 1
+        self.previousValue = value
 
 gHouseFlowPulseCounter      = PulseCounter(mqtt, "water/house")
 gIrrigationFlowPulseCounter = PulseCounter(mqtt, "water/irrigation")
 try:
-    while True:
-        # Check for Fire Flow
-        if GPIO.input(FIRE_FLOW) == 1:
-            # FIRE!
-            # Fire flag latches, must be cleared manually.
-            # Flag is set in MQTT with retain = 1, QoS = 1
-        # Check for House Flow Pulse High transition
-        gHouseFlowPulseCounter.input(GPIO.input(HOUSE_FLOW_PULSE))
+    with nested(gHouseFlowPulseCounter.pulseRate,gIrrigationFlowPulseCounter.pulseRate):
+        while True:
+            # Check for Fire Flow
+            if GPIO.input(FIRE_FLOW) == 1:
+                # FIRE!
+                print("FIRE DETECTED")
+                # Fire flag latches, must be cleared manually.
+                # Flag is set in MQTT with retain = 1, QoS = 1
+            gHouseFlowPulseCounter.Input(GPIO.input(HOUSE_FLOW_PULSE))
+            gIrrigationFlowPulseCounter.Input(GPIO.input(IRRIGATION_FLOW_PULSE))
 
-        # Check for Irrigation Flow Pulse High transition
-        gIrrigationFlowPulseCounter.input(GPIO.input(IRRIGATION_FLOW_PULSE))
+            # Read Inlet Pressure over I2C
+            # Read Outlet Pressure over I2C
+            print("House=",gHouseFlowPulseCounter.pulseRate.getValueAsRate(1000),
+                " Irrigation=",gIrrigationFlowPulseCounter.pulseRate.getValueAsRate(1000))
+            time.sleep(0.1)
 
-        # Read Inlet Pressure over I2C
-        # Read Outlet Pressure over I2C
-        time.sleep(0.01);
 except KeyboardInterrupt:
     GPIO.cleanup()
