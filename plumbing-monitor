@@ -42,7 +42,7 @@ class PulseCounter():
         self.pulseRateInput = 0
         self.pulseCount = 0
         self.gallonsPerPulse = 0.1
-        self.pulseRate = ExponentiallyDampedMovingAverage(11,1000,100,self.getRateInput)
+        self.pulseRate = ExponentiallyDampedMovingAverage(11,5000,500,self.getRateInput)
     
     def GetTotalVolume(self):
         return self.pulseCount * self.gallonsPerPulse
@@ -52,7 +52,7 @@ class PulseCounter():
     def getRateInput(self):
         value = self.pulseRateInput
         self.pulseRateInput = 0
-        print("getRateInput returns ", value)
+        #print("getRateInput returns ", value)
         return value
 
     def Input(self, value):
@@ -78,7 +78,7 @@ class FlowSensorData:
         self.topic = topic
         self.totalVolume = 0
         self.dailyVolume = 0
-        self.dailyAverage = 0 # TODO use another edma
+        self.dailyAverage = 0
         self.numDays = 0
         self.currentFlowRate = 0
         self.pulseCounter = PulseCounter()
@@ -86,11 +86,16 @@ class FlowSensorData:
     def GetCurrentGPM(self):
         return self.pulseCounter.GetCurrentGPM()
     def GetDailyVolume(self):
-        return self.dailyVolume
+        return self.pulseCounter.GetTotalVolume()
     def GetDailyAverage(self):
         return self.dailyAverage
     def GetMaxGPM(self):
         return 0 # TODO input loop should track this
+
+    def Input(self, input):
+        self.pulseCounter.Input(input)
+        # Check if this is a new day, and update dailys
+        
 
 
 
@@ -117,8 +122,8 @@ class DataPublisher():
         self.outletPressure = PressureSensorData("water/outlet", 40, 90)
 
     def fireFlowInput(self, isFlowing):
-        if (isFlowing and self.Fireflow == False):
-            self.Fireflow = True # latches ON until explicitly cleared via MQTT
+        if (isFlowing and self.fireFlow == False):
+            self.fireFlow = True # latches ON until explicitly cleared via MQTT
     
     def houseFlowInput(self, input):
         self.houseFlow.pulseCounter.Input(input)

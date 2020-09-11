@@ -15,7 +15,7 @@ class Annunciator {
      let width = 100;
      let height = 60;
      let thickness = 3;
-     if (state == 'ON') {
+     if (state == "True") {
        fill(this.colorOn);
      } else {
        fill(this.colorOff);
@@ -24,7 +24,7 @@ class Annunciator {
      fill(bgColor);
      rect(this.x - width / 2 + thickness,this.y - height / 2 + thickness,
           width - thickness * 2,height - thickness * 2);
-     if (state == 'ON') {
+     if (state == "True") {
        fill(this.colorOn);
      } else {
        fill(this.colorOff);
@@ -69,6 +69,7 @@ class Gauge {
     }
 
     drw(value, low, high) {
+        value = parseFloat(value).toFixed(1);
         this.value = value;
 
         let gaugeOffsetY = -50;
@@ -136,6 +137,8 @@ class UsageMeter {
     this.units = units;
   }
   drw(current, average) {
+    current = parseFloat(current).toFixed(1);
+    average = parseFloat(average).toFixed(1);    
     // x,y is dead center on the bar
     // width height are for the bar itself
     // needles and text are fixed size
@@ -144,7 +147,8 @@ class UsageMeter {
     // maximum bar length is 25% over average
     const thick = 1;
     const fontSize = 12;
-    let max = average * 1.25;
+    let max = Math.max(current, average) * 1.2;
+    if (max == 0) max = 1;
     let currentX = current / max * (this.width - thick * 2) + this.x - this.width / 2;
     let avgX = average / max * this.width + this.x - this.width / 2;
 
@@ -259,32 +263,59 @@ let gResetRanges = new Button(700, 380, 'RESET\nRANGES');
 
 let gInfoBar = new InfoBar(20, 455, 760);
 
+let state = {}
+
+let mqtt = new Paho.MQTT.Client("10.0.1.19",Number(1884),"clientID")
+
+function onConnect() {
+  console.log('MQTT connected!')
+  mqtt.subscribe("water/#")
+}
+function onConnectionLost(responseObject) {
+  console.log("Connection Lost: "+responseObject.errorMessage)
+}
+function onMessageArrived(message) {
+  //console.log("MQTT Message: "+message.topic + " = " + message.payloadString)
+  state[message.topic] = message.payloadString
+}
+
 function setup() {
     createCanvas(800, 480);
     background('#000000');
     frameRate(10);
     noStroke();
+
+    mqtt.onConnectionLost = onConnectionLost
+    mqtt.onMessageArrived = onMessageArrived
+    mqtt.connect({
+      onSuccess: onConnect,
+      userName: 'water',
+      password: 'rmWP80rN0TeVZHPw'
+    })
 }
 
 function draw() {
   background('#000000');
 
-  gHouse.drw(7.3, 0, 9.5);
-  gIrrigation.drw(5.1);
+  gHouse.drw(state["water/houseFlow/currentGPM"], 0, state["water/houseFlow/maxGPM"]);
+  gIrrigation.drw(state["water/irrigationFlow/currentGPM"], 0,
+          state["water/irrigationFlow/maxGPM"]);
   gInletPSI.drw(15.9, 0, 150);
   gOutletPSI.drw(70.3, 0, 150);
-  gHouseUsage.drw(107.7, 150.1);
-  gIrrigationUsage.drw(0, 104.0);
+  gHouseUsage.drw(state["water/houseFlow/dailyVolume"],
+                  state["water/houseFlow/dailyAverage"]);
+  gIrrigationUsage.drw(state["water/irrigationFlow/dailyVolume"],
+                  state["water/irrigationFlow/dailyAverage"]);
 
   gInletSafeRange.drw();
   gOutletSafeRange.drw();
 
-  gFire.drw('ON');
-  gFlood.drw('ON');
-  gInletHigh.drw('ON');
-  gInletLow.drw('OFF');
-  gOutletHigh.drw('OFF');
-  gOutletLow.drw('OFF');
+  gFire.drw(state["water/fireFlow"]);
+  gFlood.drw("False");
+  gInletHigh.drw("False");
+  gInletLow.drw("False");
+  gOutletHigh.drw("False");
+  gOutletLow.drw("False");
 
   gSilence.drw();
   gTest.drw();

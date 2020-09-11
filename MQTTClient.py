@@ -43,4 +43,4 @@ class MQTTClient:
                 msgs = self.publisher.getMessagesToPublish()
                 for msg in msgs:
                     self.client.publish(msg['topic'],msg['payload'],msg['qos'],msg['retain'])
-                self.cv.wait(0.02)
+                self.cv.wait(0.2)
