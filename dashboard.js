@@ -113,7 +113,7 @@ class Gauge {
 
       
         fill('#000000');    
-        arc(this.x, this.y + gaugeOffsetY, insideRadius, insideRadius, arcStart, arcEnd);
+        circle(this.x, this.y + gaugeOffsetY, insideRadius);
 
         textAlign(CENTER, BASELINE);
         textSize(40);
