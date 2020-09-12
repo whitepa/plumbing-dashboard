@@ -44,3 +44,4 @@ class MQTTClient:
                 for msg in msgs:
                     self.client.publish(msg['topic'],msg['payload'],msg['qos'],msg['retain'])
                 self.cv.wait(0.2)
+        print("MQTT loop exiting")

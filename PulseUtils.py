@@ -25,6 +25,7 @@ class ExponentiallyDampedMovingAverage:
         self.thread.start()
     
     def __exit__(self, exc_type, exc_value, traceback):
+        print("EDMA __exit__")
         with self.lock:
             self.shutdown = True
             self.cv.notify()
@@ -58,3 +59,4 @@ class ExponentiallyDampedMovingAverage:
                 else:
                     waitTime = updateInterval - (now - lastCalc)
                 self.cv.wait(waitTime)
+        print("EDMA runloop exiting")
