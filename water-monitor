@@ -169,7 +169,7 @@ class DataPublisher():
         
 try:
     config = configparser.ConfigParser()
-    config.read('plumbing-monitor.ini')
+    config.read('water-monitor.ini')
     p = DataPublisher()
     mqtt = MQTTClient(p,config['MQTT']['Host'],
                         int(config['MQTT']['Port']),
