@@ -3,16 +3,14 @@
 import RPi.GPIO as GPIO
 import time
 import os
-#from ADS1115 import ADS1115
 from PulseUtils import ExponentiallyDampedMovingAverage
 from contextlib import ExitStack
 
 from MQTTClient import MQTTClient
+from PressureSensor import PressureSensor
 
 import configparser
 
-
-# ads1115 = ADS1115()
 
 GPIO.setmode(GPIO.BCM)
 
@@ -175,10 +173,12 @@ try:
                         int(config['MQTT']['Port']),
                         config['MQTT']['Username'],
                         config['MQTT']['Password'])
+    pressureSensor = PressureSensor()
     with ExitStack() as stack:
         stack.enter_context(p.houseFlow.pulseCounter.pulseRate)
         stack.enter_context(p.irrigationFlow.pulseCounter.pulseRate)
         stack.enter_context(mqtt)
+        stack.enter_context(pressureSensor)
         while True:
             # Report values of all GPIO inputs to the DataHandler
             p.fireFlowInput(GPIO.input(FIRE_FLOW))
@@ -186,8 +186,10 @@ try:
             p.houseFlowInput(GPIO.input(HOUSE_FLOW_PULSE))
             p.irrigationFlowInput(GPIO.input(IRRIGATION_FLOW_PULSE))
 
-            # TODO Read Inlet/Outlet Pressures over I2C
-            
+            # Read Inlet/Outlet Pressures over I2C
+            print("Main Inlet="+str(pressureSensor.inletPressure))
+            print("Main Outlet="+str(pressureSensor.outletPressure))
+
             time.sleep(0.1)
 
 except KeyboardInterrupt:
