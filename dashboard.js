@@ -69,7 +69,7 @@ class Button {
         this.x + this.width / 2 > mouseX &&
         this.y - this.height / 2 < mouseY &&
         this.y + this.height / 2 > mouseY) {
-          this.illuminateFrames = 5;
+          this.illuminateFrames = 2;
           this.onPress();
         }
    }
