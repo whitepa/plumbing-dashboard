@@ -70,6 +70,14 @@ class PressureSensorData:
         self.pressure = 0
         self.minPressure = 0
         self.maxPressure = 0
+    
+    def Input(self,input):
+        self.pressure = input
+        self.maxPressure = max(self.pressure, self.maxPressure)
+        self.minPressure = min(self.pressure, self.minPressure)
+        # TODO check for safe range excursions
+        # TODO let MQTT be single source of truth for min/max.
+        # will need to subscribe and monitor MQTT
 
 class FlowSensorData:
     def __init__(self, topic):
@@ -135,6 +143,12 @@ class DataPublisher():
     def irrigationFlowInput(self, input):
         self.irrigationFlow.pulseCounter.Input(input)
 
+    def inletPressureInput(self, input):
+        self.inletPressure.Input(input)
+
+    def outletPressureInput(self, input):
+        self.outletPressure.Input(input)
+
     def getMessagesToPublish(self):
         # TODO only publish what has changed
         # Returns an array of messages which can be published via paho MQTT's
@@ -152,8 +166,9 @@ class DataPublisher():
         pairs.append({'topic':"water/irrigationFlow/maxGPM",'payload':str(self.irrigationFlow.GetMaxGPM())})
         pairs.append({'topic':"water/irrigationFlow/dailyVolume",'payload':str(self.irrigationFlow.GetDailyVolume())})
         pairs.append({'topic':"water/irrigationFlow/dailyAverage",'payload':str(self.irrigationFlow.GetDailyAverage())})
-        # TODO add pressure related stuff
-        
+        paris.append({'topic':"water/inlet/pressure",'payload':str(self.inletPressure.pressure)})
+        paris.append({'topic':"water/outlet/pressure",'payload':str(self.outletPressure.pressure)})
+
         msgs = []
         for x in pairs:
             x['qos'] = 1
@@ -187,8 +202,8 @@ try:
             p.irrigationFlowInput(GPIO.input(IRRIGATION_FLOW_PULSE))
 
             # Read Inlet/Outlet Pressures over I2C
-            print("Main Inlet="+str(pressureSensor.inletPressure))
-            print("Main Outlet="+str(pressureSensor.outletPressure))
+            p.inletPressureInput(pressureSensor.inletPressure)
+            p.outletPressureInput(pressureSensor.outletPressure)
 
             time.sleep(0.1)
 

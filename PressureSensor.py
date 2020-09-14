@@ -6,7 +6,10 @@ import math
 class PressureSensor:
     # I strongly dislike the ADS1115 interface. This class encapsulates all its
     # quirks to make it easy for the main program to just get the pressure
-    # values.
+    # values. Normally, you'd instantiate multiple instances of this pressure
+    # sensor class for each pressure sensor, although the ADS1115 doesn't allow
+    # truly parallel sampling of each channel. Therefore, it's best to have a
+    # single instance synchronously read each value from the ADC.
     def __init__(self):
         self.inletPressure = 0
         self.outletPressure = 0
@@ -31,6 +34,8 @@ class PressureSensor:
                 self.adc.channel = 0
                 self.adc.config_single_ended()
                 time.sleep(0.2) # sleep here to give the interface the time it needs (??)
+                # Without the sleep, you will read the value for the previously
+                # set channel.
                 inlet = self.adc.read_adc()
                 #print("Inlet="+str(inlet['r']))
                 self.inletPressure = inlet['r'] # TODO conversion
