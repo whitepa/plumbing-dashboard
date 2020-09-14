@@ -75,9 +75,7 @@ class PressureSensorData:
         self.pressure = input
         self.maxPressure = max(self.pressure, self.maxPressure)
         self.minPressure = min(self.pressure, self.minPressure)
-        # TODO check for safe range excursions
-        # TODO let MQTT be single source of truth for min/max.
-        # will need to subscribe and monitor MQTT
+        # print(self.topic + ": " + str(self.pressure))
 
 class FlowSensorData:
     def __init__(self, topic):
@@ -103,9 +101,6 @@ class FlowSensorData:
         # Check if this is a new day, and update dailys
 
 
-
-
-
 class DataPublisher():
     # handle the stats data itself regarding all water and plumbing systems
     # decide when and what to publish to MQTT.
@@ -125,7 +120,11 @@ class DataPublisher():
         self.houseFlow = FlowSensorData("water/houseFlow")
         self.irrigationFlow = FlowSensorData("water/irrigationFlow")
         self.inletPressure = PressureSensorData("water/inlet", 5, 40)
-        self.outletPressure = PressureSensorData("water/outlet", 40, 90)
+        self.outletPressure = PressureSensorData("water/outlet", 60, 90)
+        self.mqttInletMinPressure = 0
+        self.mqttInletMaxPressure = 0
+        self.mqttOutletMinPressure = 0
+        self.mqttOutletMaxPressure = 0
 
     def fireFlowInput(self, isFlowing):
         if (isFlowing and self.fireFlow == False):
@@ -149,6 +148,22 @@ class DataPublisher():
     def outletPressureInput(self, input):
         self.outletPressure.Input(input)
 
+    def receivedMessage(self, topic, payload):
+        if topic == "water/inlet/minPressure":
+            self.mqttInletMinPressure = float(payload)
+            print("Reset inlet min to " + str(payload))
+        if topic == "water/inlet/maxPressure":
+            self.mqttInletMaxPressure = float(payload)
+            print("Reset inlet max to " + str(payload))
+        if topic == "water/outlet/minPressure":
+            self.mqttOutletMinPressure = float(payload)
+            print("Reset outlet min to " + str(payload))
+        if topic == "water/outlet/maxPressure":
+            self.mqttOutletMinPressure = float(payload)
+            print("Reset outlet max to " + str(payload))
+        if topic == "water/alarm":
+            print("Set Alarm state: " + str(payload))
+
     def getMessagesToPublish(self):
         # TODO only publish what has changed
         # Returns an array of messages which can be published via paho MQTT's
@@ -166,8 +181,16 @@ class DataPublisher():
         pairs.append({'topic':"water/irrigationFlow/maxGPM",'payload':str(self.irrigationFlow.GetMaxGPM())})
         pairs.append({'topic':"water/irrigationFlow/dailyVolume",'payload':str(self.irrigationFlow.GetDailyVolume())})
         pairs.append({'topic':"water/irrigationFlow/dailyAverage",'payload':str(self.irrigationFlow.GetDailyAverage())})
-        paris.append({'topic':"water/inlet/pressure",'payload':str(self.inletPressure.pressure)})
-        paris.append({'topic':"water/outlet/pressure",'payload':str(self.outletPressure.pressure)})
+        pairs.append({'topic':"water/inlet/pressure",'payload':str(self.inletPressure.pressure)})
+        pairs.append({'topic':"water/outlet/pressure",'payload':str(self.outletPressure.pressure)})
+        if (self.inletPressure.minPressure < self.mqttInletMinPressure):
+            pairs.append({'topic':"water/inlet/minPressure",'payload':str(self.inletPressure.minPressure)})
+        if (self.inletPressure.maxPressure > self.mqttInletMaxPressure):            
+            pairs.append({'topic':"water/inlet/maxPressure",'payload':str(self.inletPressure.maxPressure)})
+        if (self.outletPressure.minPressure < self.mqttOutletMinPressure):
+            pairs.append({'topic':"water/outlet/minPressure",'payload':str(self.outletPressure.minPressure)})
+        if (self.outletPressure.maxPressure > self.mqttOutletMaxPressure):
+            pairs.append({'topic':"water/outlet/maxPressure",'payload':str(self.outletPressure.maxPressure)})
 
         msgs = []
         for x in pairs:

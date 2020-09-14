@@ -14,6 +14,7 @@ class MQTTClient:
         self.password = password
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
+        self.client.on_subscribe = self.on_subscribe
 
     def __enter__(self):
         self.client.username_pw_set(self.username, self.password)
@@ -29,12 +30,18 @@ class MQTTClient:
         self.thread.join()
         self.client.loop_stop()
 
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(self, client, userdata, flags, rc):
         print("MQTT connected with result code "+str(rc))
+        print("Subscribing to water/#")
+        client.subscribe("water/#",1)
 
-    def on_message(client, userdata, msg):
-        print("MQTT: ", msg.topic + " " + str(msg.payload))
-    
+    def on_message(self, client, userdata, msg):
+        #print("MQTT: ", msg.topic + " " + str(msg.payload))
+        self.publisher.receivedMessage(msg.topic, msg.payload)
+
+    def on_subscribe(self, client,userdata,mid,granted_qos):
+        print("MQTT on_subscribe")
+
     def loop(self):
         print("MQTT loop starting")
         with self.cv:

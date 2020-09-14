@@ -15,7 +15,7 @@ class Annunciator {
      let width = 100;
      let height = 60;
      let thickness = 3;
-     if (state == "True") {
+     if (state == true) {
        fill(this.colorOn);
      } else {
        fill(this.colorOff);
@@ -24,7 +24,7 @@ class Annunciator {
      fill(bgColor);
      rect(this.x - width / 2 + thickness,this.y - height / 2 + thickness,
           width - thickness * 2,height - thickness * 2);
-     if (state == "True") {
+     if (state == true) {
        fill(this.colorOn);
      } else {
        fill(this.colorOff);
@@ -43,13 +43,20 @@ class Button {
      this.onPress = onPress;
      this.width = 150;
      this.height = 100;
+     this.illuminateFrames = 0
      gPressableItems.push(this);
    }
    drw() {
      let thickness = 2;
      fill('#CCCCCC');
      rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-     fill('#000000');
+     if (this.illuminateFrames > 0) {
+       fill('#606060')
+       this.illuminateFrames--;
+     }
+     else {
+      fill('#000000');
+     }
      rect(this.x - this.width / 2 + thickness, this.y - this.height / 2 + thickness,
           this.width - thickness * 2, this.height - thickness * 2);
      fill('#CCCCCC');
@@ -62,6 +69,7 @@ class Button {
         this.x + this.width / 2 > mouseX &&
         this.y - this.height / 2 < mouseY &&
         this.y + this.height / 2 > mouseY) {
+          this.illuminateFrames = 5;
           this.onPress();
         }
    }
@@ -79,7 +87,7 @@ class Gauge {
     }
 
     drw(value, low, high) {
-        value = parseFloat(value).toFixed(1);
+        value = max(float(parseFloat(value).toFixed(1)), 0.0);
         this.value = value;
 
         let gaugeOffsetY = -50;
@@ -254,7 +262,7 @@ let gHouseUsage = new UsageMeter(100, meterHeight, 130, 15, "gal");
 let gIrrigationUsage = new UsageMeter(300, meterHeight, 130, 15, "gal");
 
 let gInletSafeRange = new SafeRangeIndicator(506, meterHeight, '5 - 40 PSI');
-let gOutletSafeRange = new SafeRangeIndicator(709, meterHeight, '50 - 90 PSI');
+let gOutletSafeRange = new SafeRangeIndicator(709, meterHeight, '60 - 90 PSI');
 
 // 6 annunciators
 let a_x = 62;
@@ -268,30 +276,40 @@ let gOutletHigh = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nHIGH', '#FEFF00', '
 let gOutletLow  = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#03FFFF', '#444444');
 
 let gSilence     = new Button(100, 380, 'SILENCE', function() {
-
+  // silence button will clear physical alarm state in MQTT
+  sendMessage("water/alarm", "False");
 });
 let gTest        = new Button(300, 380, 'TEST', function() {
-
+  // test button will turn on physical alarm and anunciators
+  sendMessage("water/alarm", "True");
 });
 
 let gResetFire   = new Button(500, 380, 'RESET\nFIRE', 
   function(){
-    message = new Paho.MQTT.Message("False");
-    message.destinationName = "water/fireFlow";
-    message.retained = true;
-    message.qos = 1;
-    mqtt.send(message);
+    sendMessage("water/fireFlow", "False");
   });
  
 let gResetRanges = new Button(700, 380, 'RESET\nRANGES', function() {
-
-});
+    sendMessage("water/inlet/minPressure", state["water/inlet/pressure"]);
+    sendMessage("water/inlet/maxPressure", state["water/inlet/pressure"]);
+    sendMessage("water/outlet/minPressure", state["water/outlet/pressure"]);
+    sendMessage("water/inlet/maxPressure", state["water/outlet/pressure"]);
+}
+);
 
 let gInfoBar = new InfoBar(20, 455, 760);
 
 let state = {}
 
 let mqtt = new Paho.MQTT.Client("10.0.1.19",Number(1884),Math.random().toString(16).substring(2,10));
+
+function sendMessage(topic, payload) {
+  message = new Paho.MQTT.Message(payload);
+  message.destinationName = topic;
+  message.retained = true;
+  message.qos = 1;
+  mqtt.send(message);
+}
 
 function attemptConnect() {
   mqtt.connect({
@@ -330,8 +348,10 @@ function draw() {
   gHouse.drw(state["water/houseFlow/currentGPM"], 0, state["water/houseFlow/maxGPM"]);
   gIrrigation.drw(state["water/irrigationFlow/currentGPM"], 0,
           state["water/irrigationFlow/maxGPM"]);
-  gInletPSI.drw(15.9, 0, 150);
-  gOutletPSI.drw(70.3, 0, 150);
+  gInletPSI.drw(state["water/inlet/pressure"], state["water/inlet/minPressure"],
+          state["water/inlet/maxPressure"]);
+  gOutletPSI.drw(state["water/outlet/pressure"], state["water/outlet/minPressure"],
+          state["water/outlet/maxPressure"]);
   gHouseUsage.drw(state["water/houseFlow/dailyVolume"],
                   state["water/houseFlow/dailyAverage"]);
   gIrrigationUsage.drw(state["water/irrigationFlow/dailyVolume"],
@@ -340,12 +360,12 @@ function draw() {
   gInletSafeRange.drw();
   gOutletSafeRange.drw();
 
-  gFire.drw(state["water/fireFlow"]);
-  gFlood.drw("False");
-  gInletHigh.drw("False");
-  gInletLow.drw("False");
-  gOutletHigh.drw("False");
-  gOutletLow.drw("False");
+  gFire.drw(state["water/fireFlow"] == "True");
+  gFlood.drw(false);
+  gInletHigh.drw(state["water/inlet/maxPressure"] > 40);
+  gInletLow.drw(state["water/inlet/minPressure"] < 5);
+  gOutletHigh.drw(state["water/outlet/maxPressure"] > 90);
+  gOutletLow.drw(state["water/outlet/minPressure"] < 60);
 
   gSilence.drw();
   gTest.drw();

@@ -13,6 +13,9 @@ class PressureSensor:
     def __init__(self):
         self.inletPressure = 0
         self.outletPressure = 0
+        self.inletRange = 200 # sensor range is 0-200 psi
+        self.outletRange = 200 # sensor range is 0-200 psi
+        self.ambientOffset = 12.86 # reading of ambient pressure
         self.adc = ADS1115()
         self.lock = threading.Lock()
         self.cv = threading.Condition(self.lock)
@@ -38,12 +41,12 @@ class PressureSensor:
                 # set channel.
                 inlet = self.adc.read_adc()
                 #print("Inlet="+str(inlet['r']))
-                self.inletPressure = inlet['r'] # TODO conversion
+                self.inletPressure = inlet['r'] / 65536 * self.inletRange - self.ambientOffset
 
                 self.adc.channel = 1
                 self.adc.config_single_ended()
                 time.sleep(0.2)
                 outlet = self.adc.read_adc()
                 #print("Outlet="+str(outlet['r']))
-                self.outletPressure = outlet['r'] # TODO conversion
+                self.outletPressure = outlet['r'] / 65536 * self.outletRange - self.ambientOffset
                 self.cv.wait(0.1)
