@@ -10,6 +10,9 @@ class Annunciator {
    }
   
    drw(state) {
+     if (gState["water/annunciatorTest"] == "True") {
+       state = true;
+     }
      this.state = state;
      let bgColor = '#222222';
      let width = 100;
@@ -280,8 +283,12 @@ let gSilence     = new Button(100, 380, 'SILENCE', function() {
   sendMessage("water/alarm", "False");
 });
 let gTest        = new Button(300, 380, 'TEST', function() {
-  // test button will turn on physical alarm and anunciators
-  sendMessage("water/alarm", "True");
+  // test button will toggle annunciator test state
+  if (gState["water/annunciatorTest"] == "True") {
+    sendMessage("water/annunciatorTest", "False");
+  } else {
+    sendMessage("water/annunciatorTest", "True");
+  }
 });
 
 let gResetFire   = new Button(500, 380, 'RESET\nFIRE', 
@@ -290,16 +297,16 @@ let gResetFire   = new Button(500, 380, 'RESET\nFIRE',
   });
  
 let gResetRanges = new Button(700, 380, 'RESET\nRANGES', function() {
-    sendMessage("water/inlet/minPressure", state["water/inlet/pressure"]);
-    sendMessage("water/inlet/maxPressure", state["water/inlet/pressure"]);
-    sendMessage("water/outlet/minPressure", state["water/outlet/pressure"]);
-    sendMessage("water/inlet/maxPressure", state["water/outlet/pressure"]);
+    sendMessage("water/inlet/minPressure", gState["water/inlet/pressure"]);
+    sendMessage("water/inlet/maxPressure", gState["water/inlet/pressure"]);
+    sendMessage("water/outlet/minPressure", gState["water/outlet/pressure"]);
+    sendMessage("water/inlet/maxPressure", gState["water/outlet/pressure"]);
 }
 );
 
 let gInfoBar = new InfoBar(20, 455, 760);
 
-let state = {}
+let gState = {}
 
 let mqtt = new Paho.MQTT.Client("10.0.1.19",Number(1884),Math.random().toString(16).substring(2,10));
 
@@ -328,8 +335,8 @@ function onConnectionLost(responseObject) {
   setTimeout(attemptConnect, 1000);
 }
 function onMessageArrived(message) {
-  //console.log("MQTT Message: "+message.topic + " = " + message.payloadString)
-  state[message.topic] = message.payloadString
+  console.log("MQTT Message: "+message.topic + " = " + message.payloadString)
+  gState[message.topic] = message.payloadString
 }
 function setup() {
     createCanvas(800, 480);
@@ -345,27 +352,27 @@ function setup() {
 function draw() {
   background('#000000');
 
-  gHouse.drw(state["water/houseFlow/currentGPM"], 0, state["water/houseFlow/maxGPM"]);
-  gIrrigation.drw(state["water/irrigationFlow/currentGPM"], 0,
-          state["water/irrigationFlow/maxGPM"]);
-  gInletPSI.drw(state["water/inlet/pressure"], state["water/inlet/minPressure"],
-          state["water/inlet/maxPressure"]);
-  gOutletPSI.drw(state["water/outlet/pressure"], state["water/outlet/minPressure"],
-          state["water/outlet/maxPressure"]);
-  gHouseUsage.drw(state["water/houseFlow/dailyVolume"],
-                  state["water/houseFlow/dailyAverage"]);
-  gIrrigationUsage.drw(state["water/irrigationFlow/dailyVolume"],
-                  state["water/irrigationFlow/dailyAverage"]);
+  gHouse.drw(gState["water/houseFlow/currentGPM"], 0, gState["water/houseFlow/maxGPM"]);
+  gIrrigation.drw(gState["water/irrigationFlow/currentGPM"], 0,
+          gState["water/irrigationFlow/maxGPM"]);
+  gInletPSI.drw(gState["water/inlet/pressure"], gState["water/inlet/minPressure"],
+          gState["water/inlet/maxPressure"]);
+  gOutletPSI.drw(gState["water/outlet/pressure"], gState["water/outlet/minPressure"],
+          gState["water/outlet/maxPressure"]);
+  gHouseUsage.drw(gState["water/houseFlow/dailyVolume"],
+                  gState["water/houseFlow/dailyAverage"]);
+  gIrrigationUsage.drw(gState["water/irrigationFlow/dailyVolume"],
+                  gState["water/irrigationFlow/dailyAverage"]);
 
   gInletSafeRange.drw();
   gOutletSafeRange.drw();
 
-  gFire.drw(state["water/fireFlow"] == "True");
+  gFire.drw(gState["water/fireFlow"] == "True");
   gFlood.drw(false);
-  gInletHigh.drw(state["water/inlet/maxPressure"] > 40);
-  gInletLow.drw(state["water/inlet/minPressure"] < 5);
-  gOutletHigh.drw(state["water/outlet/maxPressure"] > 90);
-  gOutletLow.drw(state["water/outlet/minPressure"] < 60);
+  gInletHigh.drw(gState["water/inlet/maxPressure"] > 40);
+  gInletLow.drw(gState["water/inlet/minPressure"] < 5);
+  gOutletHigh.drw(gState["water/outlet/maxPressure"] > 90);
+  gOutletLow.drw(gState["water/outlet/minPressure"] < 60);
 
   gSilence.drw();
   gTest.drw();
