@@ -52,6 +52,10 @@ I have also chosen to make the MQTT broker the single source of truth for the cu
 | water/[in\|out]let/pressure | Current pressure in PSI. |
 | water/[in\|out]let/minPressure | Minimum observed pressure in PSI. |
 | water/[in\|out]let/maxPressure | Maximum observed pressure in PSI. |
+| water/roomTemp | Utility room temperature in Fahrenheit. |
+| water/minRoomTemp | Minimum observed room temperature. |
+| water/minRoomTempTimestamp | UNIX timestamp when the minimum observation was made. |
+| water/floodDetected | Flood sensor state: "True" if water is currently detected on the floor. |
 
 #### Backend
 The backend is implemented in Python, with most of it in the "water-monitor" script.
@@ -66,4 +70,7 @@ The Fire Flow sensor is the simplest of all the sensors to sample.  It's just a 
 ### Dashboard
 
 ### Future Improvements
+#### Eliminate external dependency on MQTT
+Today, the MQTT broker I am using is part of my Home Assistant deployment, which runs on a separate server in my garage.  Ideally, I should be running an MQTT broker (likely Mosquitto) directly on the Raspberry Pi which runs the dashboard.  My main MQTT broker would then connect to it and subscribe to the entire water/# topic heirarchy. This would allow the plumbing monitor, dashboard display, annunciators, and alarms to continue to function on their own even if the Home Assistant system were unavailable, or goes away.
+#### Pump Safety
 Our pump is always-on, plugged directly into mains power.  If a low inlet pressure event occurs, the pump could burn itself up trying to boost the outlet pressure. Therefore as a future improvement, I'd like to tie the low-inlet-pressure condition to a relay which kills power to the pump. The pump is 1.8HP and runs on a 240v 20A circuit so a real industrial relay will be required (the Sparkfun / Adafruit stuff likely won't cut it). As a side note, this situation has already happened once while Washington Water was servicing a failed PRV. Luckily, the technicians remembered I had a booster pump and were nice enough to stop by the house right after this event started to let me know to unplug the pump!  Talk about going above and beyond!
