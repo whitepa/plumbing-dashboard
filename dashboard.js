@@ -274,9 +274,9 @@ let a_y = 45;
 let gFire       = new Annunciator(a_x,a_y, 'FIRE', '#FF0200', '#444444');
 let gFlood      = new Annunciator(a_x+=a_x_sep,a_y, 'FLOOD', '#FF8002', '#444444');
 let gInletHigh  = new Annunciator(a_x+=a_x_sep,a_y, 'INLET\nHIGH', '#FEFF00', '#444444');
-let gInletLow   = new Annunciator(a_x+=a_x_sep,a_y, 'INLET\nLOW', '#03FFFF', '#444444');
+let gInletLow   = new Annunciator(a_x+=a_x_sep,a_y, 'INLET\nLOW', '#FEFF00', '#444444');
 let gOutletHigh = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nHIGH', '#FEFF00', '#444444');
-let gOutletLow  = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#03FFFF', '#444444');
+let gOutletLow  = new Annunciator(a_x+=a_x_sep,a_y, 'OUTLET\nLOW', '#FEFF00', '#444444');
 
 let gSilence     = new Button(100, 380, 'SILENCE', function() {
   // silence button will clear physical alarm state in MQTT
