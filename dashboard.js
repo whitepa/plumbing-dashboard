@@ -383,7 +383,7 @@ function draw() {
   gInfoBar.drw(78.2, 59.0, mintime);
 }
 
-function mousePressed() {
+function mouseClicked() {
   gPressableItems.forEach(function(item) {
     item.checkPressed();
   })
