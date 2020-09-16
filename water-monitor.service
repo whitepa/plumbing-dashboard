@@ -3,7 +3,9 @@ Description=Water System Monitor
 After=network.target auditd.service
 
 [Service]
-ExecStart=/usr/local/bin/water-monitor
+User=root
+WorkingDirectory=/usr/local/plumbing-dashboard
+ExecStart=/usr/local/plumbing-dashboard/water-monitor
 
 [Install]
 WantedBy=multi-user.target
