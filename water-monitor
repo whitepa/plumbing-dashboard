@@ -3,9 +3,8 @@
 import RPi.GPIO as GPIO
 import time
 import os
-from PulseUtils import ExponentiallyDampedMovingAverage
 from contextlib import ExitStack
-
+from PulseCounter import PulseCounter
 from MQTTClient import MQTTClient
 from PressureSensor import PressureSensor
 
@@ -28,38 +27,6 @@ GPIO.setup(IRRIGATION_FLOW_PULSE, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # Setup MQTT connection
 
 
-# Pulse Counters will compute total, daily, and instant flows, and
-# publish to MQTT in asynchronous threads
-# The input() method must be called periodically with the value of
-# the associated GPIO input. The rate at which this is called must
-# be fast enough such that you don't miss two transitions of the
-# signal. This will obviously depend on your use case.
-class PulseCounter():
-    def __init__(self):
-        self.previousValue = 0
-        self.pulseRateInput = 0
-        self.pulseCount = 0
-        self.gallonsPerPulse = 0.1
-        self.pulseRate = ExponentiallyDampedMovingAverage(11,5000,500,self.getRateInput)
-    
-    def GetTotalVolume(self):
-        return self.pulseCount * self.gallonsPerPulse
-    def GetCurrentGPM(self):
-        return self.pulseRate.getValueAsRate(60000) * self.gallonsPerPulse
-
-    def getRateInput(self):
-        value = self.pulseRateInput
-        self.pulseRateInput = 0
-        #print("getRateInput returns ", value)
-        return value
-
-    def Input(self, value):
-        if value == 1 and self.previousValue == 0:
-            # transitioned high
-            self.pulseCount += 1
-            self.pulseRateInput += 1
-        self.previousValue = value
-        # TODO check for and store maximum
 
 class PressureSensorData:
     def __init__(self, topic, minSafe, maxSafe):
@@ -86,6 +53,9 @@ class FlowSensorData:
         self.numDays = 0
         self.currentFlowRate = 0
         self.pulseCounter = PulseCounter()
+
+    def EnterContext(self, stack):
+        self.pulseCounter.EnterContext(stack)
 
     def GetCurrentGPM(self):
         return self.pulseCounter.GetCurrentGPM()
@@ -125,6 +95,10 @@ class DataPublisher():
         self.mqttInletMaxPressure = 0
         self.mqttOutletMinPressure = 0
         self.mqttOutletMaxPressure = 0
+
+    def EnterContext(self, stack):
+        self.houseFlow.EnterContext(stack)
+        self.irrigationFlow.EnterContext(stack)
 
     def fireFlowInput(self, isFlowing):
         if (isFlowing and self.fireFlow == False):
@@ -213,8 +187,7 @@ try:
                         config['MQTT']['Password'])
     pressureSensor = PressureSensor()
     with ExitStack() as stack:
-        stack.enter_context(p.houseFlow.pulseCounter.pulseRate)
-        stack.enter_context(p.irrigationFlow.pulseCounter.pulseRate)
+        p.EnterContext(stack)
         stack.enter_context(mqtt)
         stack.enter_context(pressureSensor)
         while True:
