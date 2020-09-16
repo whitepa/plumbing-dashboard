@@ -32,6 +32,30 @@ Of all the components in the system, the pressure gauges probably took the most 
 ### Sensor Software
 Since my goal is to make the sensor data available to whatever other devices and systems in my home which may require it, I chose to publish the data to MQTT. I already have an MQTT broker (Mosquitto) running as part of my Home Assistant installation, so I chose to publish sensor data there. This simplifies the sensor software such that it only needs to convert the incoming signals to usable values, and then publish those values to MQTT.
 
+#### Data Model
+
+I have also chosen to make the MQTT broker the single source of truth for the current state of the system.  This allows manipulation of the state directly from either the backend (water-monitor script) or the frontend (dashboard UI) without any sort of API calls needed between them. Both the backend and frontend subscribe to the water/# MQTT topic, and are able to receive updates accordingly. All updates to the state use the "retain" flag in MQTT, which allows restarted clients to immediately receive the current state upon connection/subscription.
+
+| MQTT Topic | Description |
+|-|-|
+| water/alarm | Physical fire alarm state: "True" when alarm is sounding, "False" when off. The backend, upon detecting a transition from no fire flow to positive fire flow, shall set this to "True" one time. The "Silence" button on the frontend shall set this to "False" one time per button press. |
+| water/annunciatorTest | Annunciator test in progress. When "True", all annunciators shall activate, and minor alarms (flood / pressure deviation) shall sound. |
+| water/fireFlow | Indication of water flowing through the fire sprinkler system. If the flow sensor indicates a flow, this value shall be continuously set to "True" by the backend. The "Reset Fire" button on the frontend shall set this to "False" one time per button press. |
+| water/houseFlow/ | A subdirectory of topics dedicated to water flow for the interior plumbing system |
+| water/irrigationFlow/ | A subdirectory of topics dedicated to water flow in the irrigation system |
+| water/*Flow/currentGPM | Current gallons per minute detected in the given flow. |
+| water/*Flow/maxGPM | Maximum gallons per minute detected in the given flow. Will be set by the backend only when a new maximum is detected. Can be reset at any time by publishing a new value to this topic. |
+| water/*Flow/dailyVolume | Total gallons detected since the previous midnight local time. |
+| water/*Flow/dailyAverage | Mean daily gallons detected on this flow. |
+| water/inlet/ | Water pressure observations at the water pump inlet. |
+| water/outlet/ | Water pressure observations at the water pump outlet. |
+| water/[in\|out]let/pressure | Current pressure in PSI. |
+| water/[in\|out]let/minPressure | Minimum observed pressure in PSI. |
+| water/[in\|out]let/maxPressure | Maximum observed pressure in PSI. |
+
+#### Backend
+The backend is implemented in Python, with most of it in the "water-monitor" script.
+
 #### Fire Flow
 The Fire Flow sensor is the simplest of all the sensors to sample.  It's just a switch, so GPIO on the Pi coupled with a resistor works perfectly.
 
