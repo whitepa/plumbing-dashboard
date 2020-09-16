@@ -47,7 +47,16 @@ try:
             p.inletPressureInput(pressureSensor.inletPressure)
             p.outletPressureInput(pressureSensor.outletPressure)
 
-            time.sleep(0.1)
+            # check inputs at 100Hz. Could use some verification here of typical
+            # pulse width, or possibily use a different GPIO mode which latches
+            # once a pulse is received.  We do know at maximum theoretical flow
+            # for the pump (35 GPM) we will get 5.8 pulses per second, the
+            # question is only how long the signal remains high, and whether
+            # that will always be longer than a 10ms delay here (not accounting
+            # for scheduling jitter); this depends entirely on the pulse
+            # mechanism in the flow meter itself. At 100Hz, this script appears
+            # to consume around 8% of the CPU.
+            time.sleep(0.01)
 
 except KeyboardInterrupt:
     GPIO.cleanup()
