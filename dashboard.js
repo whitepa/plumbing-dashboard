@@ -322,7 +322,8 @@ function attemptConnect() {
   mqtt.connect({
     onSuccess: onConnect,
     userName: 'water',
-    password: 'water'
+    password: 'water',
+    reconnect: true
   })
 }
 
