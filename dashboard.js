@@ -248,7 +248,7 @@ class InfoBar {
       text(temp + ' F', this.x + this.width / 2, this.y);
       // MIN TEMP
       textAlign(RIGHT, CENTER);
-      text('MIN: ' + mintemp + ' F @ ' + now.toLocaleString(), this.x + this.width, this.y);
+      text('MIN: ' + mintemp + ' F @ ' + new Date(mintime * 1000).toLocaleString(), this.x + this.width, this.y);
     }
 
 }
@@ -301,6 +301,8 @@ let gResetRanges = new Button(700, 380, 'RESET\nRANGES', function() {
     sendMessage("water/inlet/maxPressure", gState["water/inlet/pressure"]);
     sendMessage("water/outlet/minPressure", gState["water/outlet/pressure"]);
     sendMessage("water/inlet/maxPressure", gState["water/outlet/pressure"]);
+    sendMessage("water/minRoomTemp", gState["water/roomTemp"]);
+    sendMessage("water/minRoomTempTimestamp", (new Date().getTime() / 1000.0).toString());
 }
 );
 
@@ -336,7 +338,7 @@ function onConnectionLost(responseObject) {
   setTimeout(attemptConnect, 1000);
 }
 function onMessageArrived(message) {
-  console.log("MQTT Message: "+message.topic + " = " + message.payloadString)
+  //console.log("MQTT Message: "+message.topic + " = " + message.payloadString)
   gState[message.topic] = message.payloadString
 }
 function setup() {
@@ -381,7 +383,7 @@ function draw() {
   gResetRanges.drw();
 
   const mintime = Date("2020/09/01, 03:12:45");
-  gInfoBar.drw(78.2, 59.0, mintime);
+  gInfoBar.drw(gState["water/roomTemp"], gState["water/minRoomTemp"], gState["water/minRoomTempTimestamp"]);
 }
 
 function mouseClicked() {

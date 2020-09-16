@@ -1,4 +1,5 @@
 from SensorData import PressureSensorData, FlowSensorData
+import time
 
 class DataPublisher():
     # handle the stats data itself regarding all water and plumbing systems
@@ -24,7 +25,10 @@ class DataPublisher():
         self.mqttInletMaxPressure = 0
         self.mqttOutletMinPressure = 0
         self.mqttOutletMaxPressure = 0
-
+        self.mqttMinRoomTemp = 1000
+        self.mqttMinRoomTempTimestamp = 0
+        self.mqttRoomTemp = 1000
+    
     def EnterContext(self, stack):
         self.houseFlow.EnterContext(stack)
         self.irrigationFlow.EnterContext(stack)
@@ -66,6 +70,15 @@ class DataPublisher():
             print("Reset outlet max to " + str(payload))
         if topic == "water/alarm":
             print("Set Alarm state: " + str(payload))
+        if topic == "water/minRoomTemp":
+            self.mqttMinRoomTemp = float(payload)
+            print("Set min room temp to " + str(payload))
+        if topic == "water/minRoomTempTimestamp":
+            self.mqttMinRoomTempTimestamp = float(payload)
+            print("Set min room temp timestamp to " + str(payload))
+        if topic == "water/roomTemp":
+            self.mqttRoomTemp = float(payload)
+            print("Set room temp to " + str(payload))
 
     def getMessagesToPublish(self):
         # TODO only publish what has changed
@@ -94,6 +107,11 @@ class DataPublisher():
             pairs.append({'topic':"water/outlet/minPressure",'payload':str(self.outletPressure.minPressure)})
         if (self.outletPressure.maxPressure > self.mqttOutletMaxPressure):
             pairs.append({'topic':"water/outlet/maxPressure",'payload':str(self.outletPressure.maxPressure)})
+        if (self.mqttRoomTemp < self.mqttMinRoomTemp):
+            self.mqttMinRoomTemp = self.mqttRoomTemp
+            self.mqttMinRoomTempTimestamp = time.time()
+            pairs.append({'topic':"water/minRoomTemp", 'payload':str(self.mqttMinRoomTemp)})
+            pairs.append({'topic':"water/minRoomTempTimestamp", 'payload':str(self.mqttMinRoomTempTimestamp)})
 
         msgs = []
         for x in pairs:
