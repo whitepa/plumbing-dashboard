@@ -14,7 +14,7 @@ class PressureSensorData:
         self.maxPressure = 0
     
     def Input(self,input):
-        self.pressure = input
+        self.pressure = round(input,1)
         if input != 0:
             self.maxPressure = max(self.pressure, self.maxPressure)
             self.minPressure = min(self.pressure, self.minPressure)
