@@ -21,9 +21,9 @@ class DataPublisher():
         self.irrigationFlow = FlowSensorData("water/irrigationFlow")
         self.inletPressure = PressureSensorData("water/inlet", 5, 40)
         self.outletPressure = PressureSensorData("water/outlet", 60, 90)
-        self.mqttInletMinPressure = 0
+        self.mqttInletMinPressure = 1000
         self.mqttInletMaxPressure = 0
-        self.mqttOutletMinPressure = 0
+        self.mqttOutletMinPressure = 1000
         self.mqttOutletMaxPressure = 0
         self.mqttMinRoomTemp = 1000
         self.mqttMinRoomTempTimestamp = 0

@@ -300,7 +300,7 @@ let gResetRanges = new Button(700, 380, 'RESET\nRANGES', function() {
     sendMessage("water/inlet/minPressure", gState["water/inlet/pressure"]);
     sendMessage("water/inlet/maxPressure", gState["water/inlet/pressure"]);
     sendMessage("water/outlet/minPressure", gState["water/outlet/pressure"]);
-    sendMessage("water/inlet/maxPressure", gState["water/outlet/pressure"]);
+    sendMessage("water/outlet/maxPressure", gState["water/outlet/pressure"]);
     sendMessage("water/minRoomTemp", gState["water/roomTemp"]);
     sendMessage("water/minRoomTempTimestamp", (new Date().getTime() / 1000.0).toString());
 }
