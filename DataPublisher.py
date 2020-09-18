@@ -86,6 +86,12 @@ class DataPublisher():
 
     def getMessagesToPublish(self):
         # TODO only publish what has changed
+
+        # TODO maybe wait until all initial retained messages are received via
+        # subscription before publishing anything. This would avoid the series
+        # of "hacks" below where we don't publish depending on MQTT state vs our
+        # state.
+
         # Returns an array of messages which can be published via paho MQTT's
         # "publish multiple"
         #
@@ -96,11 +102,13 @@ class DataPublisher():
         pairs.append({'topic':"water/houseFlow/currentGPM",'payload':str(self.houseFlow.GetCurrentGPM())})
         pairs.append({'topic':"water/houseFlow/maxGPM",'payload':str(self.houseFlow.GetMaxGPM())})
         pairs.append({'topic':"water/houseFlow/dailyVolume",'payload':str(self.houseFlow.GetDailyVolume())})
-        pairs.append({'topic':"water/houseFlow/dailyAverage",'payload':str(self.houseFlow.GetDailyAverage())})
+        if self.houseFlow.GetDailyAverage() > 0:
+            pairs.append({'topic':"water/houseFlow/dailyAverage",'payload':str(self.houseFlow.GetDailyAverage())})
         pairs.append({'topic':"water/irrigationFlow/currentGPM",'payload':str(self.irrigationFlow.GetCurrentGPM())})
         pairs.append({'topic':"water/irrigationFlow/maxGPM",'payload':str(self.irrigationFlow.GetMaxGPM())})
         pairs.append({'topic':"water/irrigationFlow/dailyVolume",'payload':str(self.irrigationFlow.GetDailyVolume())})
-        pairs.append({'topic':"water/irrigationFlow/dailyAverage",'payload':str(self.irrigationFlow.GetDailyAverage())})
+        if self.irrigationFlow.GetDailyAverage() > 0:
+            pairs.append({'topic':"water/irrigationFlow/dailyAverage",'payload':str(self.irrigationFlow.GetDailyAverage())})
         pairs.append({'topic':"water/inlet/pressure",'payload':str(self.inletPressure.pressure)})
         pairs.append({'topic':"water/outlet/pressure",'payload':str(self.outletPressure.pressure)})
         if (self.inletPressure.minPressure < self.mqttInletMinPressure):
