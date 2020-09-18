@@ -66,7 +66,7 @@ class DataPublisher():
             self.mqttOutletMinPressure = float(payload)
             print("Reset outlet min to " + str(payload))
         if topic == "water/outlet/maxPressure":
-            self.mqttOutletMinPressure = float(payload)
+            self.mqttOutletMaxPressure = float(payload)
             print("Reset outlet max to " + str(payload))
         if topic == "water/alarm":
             print("Set Alarm state: " + str(payload))
