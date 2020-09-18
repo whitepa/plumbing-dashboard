@@ -9,13 +9,14 @@ class PressureSensorData:
         self.maxSafe = maxSafe
 
         self.pressure = 0
-        self.minPressure = 0
+        self.minPressure = 1000
         self.maxPressure = 0
     
     def Input(self,input):
         self.pressure = input
-        self.maxPressure = max(self.pressure, self.maxPressure)
-        self.minPressure = min(self.pressure, self.minPressure)
+        if input != 0:
+            self.maxPressure = max(self.pressure, self.maxPressure)
+            self.minPressure = min(self.pressure, self.minPressure)
         # print(self.topic + ": " + str(self.pressure))
 
 class FlowSensorData:
