@@ -44,10 +44,10 @@ class DataPublisher():
             return False
 
     def houseFlowInput(self, input):
-        self.houseFlow.pulseCounter.Input(input)
+        self.houseFlow.Input(input)
 
     def irrigationFlowInput(self, input):
-        self.irrigationFlow.pulseCounter.Input(input)
+        self.irrigationFlow.Input(input)
 
     def inletPressureInput(self, input):
         self.inletPressure.Input(input)

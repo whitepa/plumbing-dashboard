@@ -22,11 +22,11 @@ class PressureSensorData:
 class FlowSensorData:
     def __init__(self, topic):
         self.topic = topic
+        self.maxGPM = 0
         self.totalVolume = 0
         self.dailyVolume = 0
         self.dailyAverage = 0
         self.numDays = 0
-        self.currentFlowRate = 0
         self.pulseCounter = PulseCounter()
 
     def EnterContext(self, stack):
@@ -39,8 +39,11 @@ class FlowSensorData:
     def GetDailyAverage(self):
         return self.dailyAverage
     def GetMaxGPM(self):
-        return 0 # TODO input loop should track this
+        return self.maxGPM
 
     def Input(self, input):
         self.pulseCounter.Input(input)
+        current = self.pulseCounter.GetCurrentGPM()
+        if current > self.maxGPM:
+            self.maxGPM = current
         # TODO Check if this is a new day, and update dailys
