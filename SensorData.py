@@ -1,6 +1,7 @@
 # Classes to track Sensor Data
 
 from PulseCounter import PulseCounter
+from datetime import datetime
 
 class PressureSensorData:
     def __init__(self, topic, minSafe, maxSafe):
@@ -24,9 +25,10 @@ class FlowSensorData:
         self.topic = topic
         self.maxGPM = 0
         self.totalVolume = 0
-        self.dailyVolume = 0
+        self.dayStartVolume = 0
         self.dailyAverage = 0
         self.numDays = 0
+        self.currentDay = datetime.now().day
         self.pulseCounter = PulseCounter()
 
     def EnterContext(self, stack):
@@ -35,15 +37,21 @@ class FlowSensorData:
     def GetCurrentGPM(self):
         return self.pulseCounter.GetCurrentGPM()
     def GetDailyVolume(self):
-        return self.pulseCounter.GetTotalVolume()
+        return self.pulseCounter.GetTotalVolume() - self.dayStartVolume
     def GetDailyAverage(self):
         return self.dailyAverage
     def GetMaxGPM(self):
         return self.maxGPM
 
     def Input(self, input):
+        now = datetime.now()
+        if now.day != self.currentDay:
+            # this is a new day, update averages and reset daily total
+            self.currentDay = now.day
+            self.dailyAverage = (self.numDays * self.dailyAverage + self.GetDailyVolume()) / (self.numDays + 1)
+            self.numDays += 1
+            self.dayStartVolume = self.pulseCounter.GetTotalVolume()
         self.pulseCounter.Input(input)
         current = self.pulseCounter.GetCurrentGPM()
         if current > self.maxGPM:
             self.maxGPM = current
-        # TODO Check if this is a new day, and update dailys

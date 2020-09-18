@@ -79,6 +79,10 @@ class DataPublisher():
         if topic == "water/roomTemp":
             self.mqttRoomTemp = float(payload)
             print("Set room temp to " + str(payload))
+        if topic == "water/houseFlow/dailyAverage":
+            self.houseFlow.dailyAverage = float(payload)
+        if topic == "water/irrigationFlow/dailyAverage":
+            self.irrigationFlow.dailyAverage = float(payload)
 
     def getMessagesToPublish(self):
         # TODO only publish what has changed
